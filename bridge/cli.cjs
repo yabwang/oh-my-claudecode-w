@@ -3301,13 +3301,13 @@ var init_ssrf_guard = __esm({
 
 // src/config/models.ts
 function getDefaultModelHigh() {
-  return process.env.OMC_MODEL_HIGH || BUILTIN_MODEL_HIGH;
+  return process.env.OMC_MODEL_HIGH || BUILTIN_TIER_MODEL_DEFAULTS.HIGH;
 }
 function getDefaultModelMedium() {
-  return process.env.OMC_MODEL_MEDIUM || BUILTIN_MODEL_MEDIUM;
+  return process.env.OMC_MODEL_MEDIUM || BUILTIN_TIER_MODEL_DEFAULTS.MEDIUM;
 }
 function getDefaultModelLow() {
-  return process.env.OMC_MODEL_LOW || BUILTIN_MODEL_LOW;
+  return process.env.OMC_MODEL_LOW || BUILTIN_TIER_MODEL_DEFAULTS.LOW;
 }
 function getDefaultTierModels() {
   return {
@@ -3363,14 +3363,30 @@ function isNonClaudeProvider() {
   }
   return false;
 }
-var BUILTIN_MODEL_HIGH, BUILTIN_MODEL_MEDIUM, BUILTIN_MODEL_LOW;
+var CLAUDE_FAMILY_DEFAULTS, BUILTIN_TIER_MODEL_DEFAULTS, CLAUDE_FAMILY_HIGH_VARIANTS, BUILTIN_EXTERNAL_MODEL_DEFAULTS;
 var init_models = __esm({
   "src/config/models.ts"() {
     "use strict";
     init_ssrf_guard();
-    BUILTIN_MODEL_HIGH = "claude-opus-4-6-20260205";
-    BUILTIN_MODEL_MEDIUM = "claude-sonnet-4-6-20260217";
-    BUILTIN_MODEL_LOW = "claude-haiku-4-5-20251001";
+    CLAUDE_FAMILY_DEFAULTS = {
+      HAIKU: "claude-haiku-4-5",
+      SONNET: "claude-sonnet-4-6",
+      OPUS: "claude-opus-4-6"
+    };
+    BUILTIN_TIER_MODEL_DEFAULTS = {
+      LOW: CLAUDE_FAMILY_DEFAULTS.HAIKU,
+      MEDIUM: CLAUDE_FAMILY_DEFAULTS.SONNET,
+      HIGH: CLAUDE_FAMILY_DEFAULTS.OPUS
+    };
+    CLAUDE_FAMILY_HIGH_VARIANTS = {
+      HAIKU: `${CLAUDE_FAMILY_DEFAULTS.HAIKU}-high`,
+      SONNET: `${CLAUDE_FAMILY_DEFAULTS.SONNET}-high`,
+      OPUS: `${CLAUDE_FAMILY_DEFAULTS.OPUS}-high`
+    };
+    BUILTIN_EXTERNAL_MODEL_DEFAULTS = {
+      codexModel: "gpt-5.3-codex",
+      geminiModel: "gemini-3.1-pro-preview"
+    };
   }
 });
 
@@ -3765,12 +3781,12 @@ function generateConfigSchema() {
               },
               codexModel: {
                 type: "string",
-                default: "gpt-5.3-codex",
+                default: BUILTIN_EXTERNAL_MODEL_DEFAULTS.codexModel,
                 description: "Default Codex model"
               },
               geminiModel: {
                 type: "string",
-                default: "gemini-3.1-pro-preview",
+                default: BUILTIN_EXTERNAL_MODEL_DEFAULTS.geminiModel,
                 description: "Default Gemini model"
               }
             }
@@ -3859,7 +3875,7 @@ function generateConfigSchema() {
     }
   };
 }
-var import_fs2, import_path2, DEFAULT_CONFIG;
+var import_fs2, import_path2, DEFAULT_TIER_MODELS, DEFAULT_CONFIG;
 var init_loader = __esm({
   "src/config/loader.ts"() {
     "use strict";
@@ -3868,30 +3884,31 @@ var init_loader = __esm({
     init_paths();
     init_jsonc();
     init_models();
+    DEFAULT_TIER_MODELS = getDefaultTierModels();
     DEFAULT_CONFIG = {
       agents: {
-        omc: { model: getDefaultModelHigh() },
-        explore: { model: getDefaultModelLow() },
-        analyst: { model: getDefaultModelHigh() },
-        planner: { model: getDefaultModelHigh() },
-        architect: { model: getDefaultModelHigh() },
-        debugger: { model: getDefaultModelMedium() },
-        executor: { model: getDefaultModelMedium() },
-        verifier: { model: getDefaultModelMedium() },
-        qualityReviewer: { model: getDefaultModelMedium() },
-        securityReviewer: { model: getDefaultModelMedium() },
-        codeReviewer: { model: getDefaultModelHigh() },
-        deepExecutor: { model: getDefaultModelHigh() },
-        testEngineer: { model: getDefaultModelMedium() },
-        buildFixer: { model: getDefaultModelMedium() },
-        designer: { model: getDefaultModelMedium() },
-        writer: { model: getDefaultModelLow() },
-        qaTester: { model: getDefaultModelMedium() },
-        scientist: { model: getDefaultModelMedium() },
-        gitMaster: { model: getDefaultModelMedium() },
-        codeSimplifier: { model: getDefaultModelHigh() },
-        critic: { model: getDefaultModelHigh() },
-        documentSpecialist: { model: getDefaultModelMedium() }
+        omc: { model: DEFAULT_TIER_MODELS.HIGH },
+        explore: { model: DEFAULT_TIER_MODELS.LOW },
+        analyst: { model: DEFAULT_TIER_MODELS.HIGH },
+        planner: { model: DEFAULT_TIER_MODELS.HIGH },
+        architect: { model: DEFAULT_TIER_MODELS.HIGH },
+        debugger: { model: DEFAULT_TIER_MODELS.MEDIUM },
+        executor: { model: DEFAULT_TIER_MODELS.MEDIUM },
+        verifier: { model: DEFAULT_TIER_MODELS.MEDIUM },
+        qualityReviewer: { model: DEFAULT_TIER_MODELS.MEDIUM },
+        securityReviewer: { model: DEFAULT_TIER_MODELS.MEDIUM },
+        codeReviewer: { model: DEFAULT_TIER_MODELS.HIGH },
+        deepExecutor: { model: DEFAULT_TIER_MODELS.HIGH },
+        testEngineer: { model: DEFAULT_TIER_MODELS.MEDIUM },
+        buildFixer: { model: DEFAULT_TIER_MODELS.MEDIUM },
+        designer: { model: DEFAULT_TIER_MODELS.MEDIUM },
+        writer: { model: DEFAULT_TIER_MODELS.LOW },
+        qaTester: { model: DEFAULT_TIER_MODELS.MEDIUM },
+        scientist: { model: DEFAULT_TIER_MODELS.MEDIUM },
+        gitMaster: { model: DEFAULT_TIER_MODELS.MEDIUM },
+        codeSimplifier: { model: DEFAULT_TIER_MODELS.HIGH },
+        critic: { model: DEFAULT_TIER_MODELS.HIGH },
+        documentSpecialist: { model: DEFAULT_TIER_MODELS.MEDIUM }
       },
       features: {
         parallelExecution: true,
@@ -3925,11 +3942,7 @@ var init_loader = __esm({
         forceInherit: false,
         escalationEnabled: true,
         maxEscalations: 2,
-        tierModels: {
-          LOW: getDefaultModelLow(),
-          MEDIUM: getDefaultModelMedium(),
-          HIGH: getDefaultModelHigh()
-        },
+        tierModels: { ...DEFAULT_TIER_MODELS },
         agentOverrides: {
           architect: { tier: "HIGH", reason: "Advisory agent requires deep reasoning" },
           planner: { tier: "HIGH", reason: "Strategic planning requires deep reasoning" },
@@ -3963,8 +3976,8 @@ var init_loader = __esm({
       // Static defaults only — env var overrides applied in loadEnvConfig()
       externalModels: {
         defaults: {
-          codexModel: "gpt-5.3-codex",
-          geminiModel: "gemini-3.1-pro-preview"
+          codexModel: BUILTIN_EXTERNAL_MODEL_DEFAULTS.codexModel,
+          geminiModel: BUILTIN_EXTERNAL_MODEL_DEFAULTS.geminiModel
         },
         fallbackPolicy: {
           onModelFailure: "provider_chain",
@@ -59930,13 +59943,12 @@ var MULTILINGUAL_PATTERNS = MULTILINGUAL_KEYWORDS.map((kw) => new RegExp(kw, "i"
 var THINK_PATTERNS = [...ENGLISH_PATTERNS, ...MULTILINGUAL_PATTERNS];
 
 // src/hooks/think-mode/switcher.ts
+init_models();
 var HIGH_VARIANT_MAP = {
-  // Claude
-  "claude-sonnet-4-5": "claude-sonnet-4-5-high",
-  "claude-sonnet-4-6": "claude-sonnet-4-6-high",
-  "claude-opus-4-6": "claude-opus-4-6-high",
-  "claude-3-5-sonnet": "claude-3-5-sonnet-high",
-  "claude-3-opus": "claude-3-opus-high",
+  // Claude canonical families
+  [CLAUDE_FAMILY_DEFAULTS.SONNET]: CLAUDE_FAMILY_HIGH_VARIANTS.SONNET,
+  [CLAUDE_FAMILY_DEFAULTS.OPUS]: CLAUDE_FAMILY_HIGH_VARIANTS.OPUS,
+  [CLAUDE_FAMILY_DEFAULTS.HAIKU]: CLAUDE_FAMILY_HIGH_VARIANTS.HAIKU,
   // GPT-4
   "gpt-4": "gpt-4-high",
   "gpt-4-turbo": "gpt-4-turbo-high",

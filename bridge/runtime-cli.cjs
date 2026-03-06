@@ -2139,17 +2139,40 @@ function validateAnthropicBaseUrl(urlString) {
 }
 
 // src/config/models.ts
-var BUILTIN_MODEL_HIGH = "claude-opus-4-6-20260205";
-var BUILTIN_MODEL_MEDIUM = "claude-sonnet-4-6-20260217";
-var BUILTIN_MODEL_LOW = "claude-haiku-4-5-20251001";
+var CLAUDE_FAMILY_DEFAULTS = {
+  HAIKU: "claude-haiku-4-5",
+  SONNET: "claude-sonnet-4-6",
+  OPUS: "claude-opus-4-6"
+};
+var BUILTIN_TIER_MODEL_DEFAULTS = {
+  LOW: CLAUDE_FAMILY_DEFAULTS.HAIKU,
+  MEDIUM: CLAUDE_FAMILY_DEFAULTS.SONNET,
+  HIGH: CLAUDE_FAMILY_DEFAULTS.OPUS
+};
+var CLAUDE_FAMILY_HIGH_VARIANTS = {
+  HAIKU: `${CLAUDE_FAMILY_DEFAULTS.HAIKU}-high`,
+  SONNET: `${CLAUDE_FAMILY_DEFAULTS.SONNET}-high`,
+  OPUS: `${CLAUDE_FAMILY_DEFAULTS.OPUS}-high`
+};
+var BUILTIN_EXTERNAL_MODEL_DEFAULTS = {
+  codexModel: "gpt-5.3-codex",
+  geminiModel: "gemini-3.1-pro-preview"
+};
 function getDefaultModelHigh() {
-  return process.env.OMC_MODEL_HIGH || BUILTIN_MODEL_HIGH;
+  return process.env.OMC_MODEL_HIGH || BUILTIN_TIER_MODEL_DEFAULTS.HIGH;
 }
 function getDefaultModelMedium() {
-  return process.env.OMC_MODEL_MEDIUM || BUILTIN_MODEL_MEDIUM;
+  return process.env.OMC_MODEL_MEDIUM || BUILTIN_TIER_MODEL_DEFAULTS.MEDIUM;
 }
 function getDefaultModelLow() {
-  return process.env.OMC_MODEL_LOW || BUILTIN_MODEL_LOW;
+  return process.env.OMC_MODEL_LOW || BUILTIN_TIER_MODEL_DEFAULTS.LOW;
+}
+function getDefaultTierModels() {
+  return {
+    LOW: getDefaultModelLow(),
+    MEDIUM: getDefaultModelMedium(),
+    HIGH: getDefaultModelHigh()
+  };
 }
 function isBedrock() {
   if (process.env.CLAUDE_CODE_USE_BEDROCK === "1") {
@@ -2200,30 +2223,31 @@ function isNonClaudeProvider() {
 }
 
 // src/config/loader.ts
+var DEFAULT_TIER_MODELS = getDefaultTierModels();
 var DEFAULT_CONFIG = {
   agents: {
-    omc: { model: getDefaultModelHigh() },
-    explore: { model: getDefaultModelLow() },
-    analyst: { model: getDefaultModelHigh() },
-    planner: { model: getDefaultModelHigh() },
-    architect: { model: getDefaultModelHigh() },
-    debugger: { model: getDefaultModelMedium() },
-    executor: { model: getDefaultModelMedium() },
-    verifier: { model: getDefaultModelMedium() },
-    qualityReviewer: { model: getDefaultModelMedium() },
-    securityReviewer: { model: getDefaultModelMedium() },
-    codeReviewer: { model: getDefaultModelHigh() },
-    deepExecutor: { model: getDefaultModelHigh() },
-    testEngineer: { model: getDefaultModelMedium() },
-    buildFixer: { model: getDefaultModelMedium() },
-    designer: { model: getDefaultModelMedium() },
-    writer: { model: getDefaultModelLow() },
-    qaTester: { model: getDefaultModelMedium() },
-    scientist: { model: getDefaultModelMedium() },
-    gitMaster: { model: getDefaultModelMedium() },
-    codeSimplifier: { model: getDefaultModelHigh() },
-    critic: { model: getDefaultModelHigh() },
-    documentSpecialist: { model: getDefaultModelMedium() }
+    omc: { model: DEFAULT_TIER_MODELS.HIGH },
+    explore: { model: DEFAULT_TIER_MODELS.LOW },
+    analyst: { model: DEFAULT_TIER_MODELS.HIGH },
+    planner: { model: DEFAULT_TIER_MODELS.HIGH },
+    architect: { model: DEFAULT_TIER_MODELS.HIGH },
+    debugger: { model: DEFAULT_TIER_MODELS.MEDIUM },
+    executor: { model: DEFAULT_TIER_MODELS.MEDIUM },
+    verifier: { model: DEFAULT_TIER_MODELS.MEDIUM },
+    qualityReviewer: { model: DEFAULT_TIER_MODELS.MEDIUM },
+    securityReviewer: { model: DEFAULT_TIER_MODELS.MEDIUM },
+    codeReviewer: { model: DEFAULT_TIER_MODELS.HIGH },
+    deepExecutor: { model: DEFAULT_TIER_MODELS.HIGH },
+    testEngineer: { model: DEFAULT_TIER_MODELS.MEDIUM },
+    buildFixer: { model: DEFAULT_TIER_MODELS.MEDIUM },
+    designer: { model: DEFAULT_TIER_MODELS.MEDIUM },
+    writer: { model: DEFAULT_TIER_MODELS.LOW },
+    qaTester: { model: DEFAULT_TIER_MODELS.MEDIUM },
+    scientist: { model: DEFAULT_TIER_MODELS.MEDIUM },
+    gitMaster: { model: DEFAULT_TIER_MODELS.MEDIUM },
+    codeSimplifier: { model: DEFAULT_TIER_MODELS.HIGH },
+    critic: { model: DEFAULT_TIER_MODELS.HIGH },
+    documentSpecialist: { model: DEFAULT_TIER_MODELS.MEDIUM }
   },
   features: {
     parallelExecution: true,
@@ -2257,11 +2281,7 @@ var DEFAULT_CONFIG = {
     forceInherit: false,
     escalationEnabled: true,
     maxEscalations: 2,
-    tierModels: {
-      LOW: getDefaultModelLow(),
-      MEDIUM: getDefaultModelMedium(),
-      HIGH: getDefaultModelHigh()
-    },
+    tierModels: { ...DEFAULT_TIER_MODELS },
     agentOverrides: {
       architect: { tier: "HIGH", reason: "Advisory agent requires deep reasoning" },
       planner: { tier: "HIGH", reason: "Strategic planning requires deep reasoning" },
@@ -2295,8 +2315,8 @@ var DEFAULT_CONFIG = {
   // Static defaults only — env var overrides applied in loadEnvConfig()
   externalModels: {
     defaults: {
-      codexModel: "gpt-5.3-codex",
-      geminiModel: "gemini-3.1-pro-preview"
+      codexModel: BUILTIN_EXTERNAL_MODEL_DEFAULTS.codexModel,
+      geminiModel: BUILTIN_EXTERNAL_MODEL_DEFAULTS.geminiModel
     },
     fallbackPolicy: {
       onModelFailure: "provider_chain",
